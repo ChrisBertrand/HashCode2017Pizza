@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -148,7 +149,7 @@ namespace HashCode2017Pizza
             //start letter
             Random r = new Random();
             
-            for (int i =1; i< 100; i++)
+            for (int i =1; i< (Rows * Collumns); i++)
             {
                 int rX = r.Next(0, Rows);
                 int rY = r.Next(0, Collumns);
@@ -177,7 +178,10 @@ namespace HashCode2017Pizza
 
         public void Initialise()
         {
-            var FileDetails = File.ReadAllLines("small.in");
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            var FileDetails = File.ReadAllLines("medium.in");
 
             var PizzaConfig = FileDetails.First();
             Rows = Convert.ToInt32(PizzaConfig.Split(' ')[0]);
@@ -193,6 +197,18 @@ namespace HashCode2017Pizza
             PrintPizza(Pizza);
             CutPizza();
             PrintPizza(Pizza);
+
+            stopWatch.Stop();
+            // Get the elapsed time as a TimeSpan value.
+            TimeSpan ts = stopWatch.Elapsed;
+
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                ts.Hours, ts.Minutes, ts.Seconds,
+                ts.Milliseconds / 10);
+            Console.WriteLine("RunTime " + elapsedTime);
+
+            var end = true;
         }
       
         public void CreatePizza(IEnumerable<string> PizzaDetails)
