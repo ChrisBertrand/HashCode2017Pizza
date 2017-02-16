@@ -51,8 +51,9 @@ namespace HashCode2017Pizza
         public int MaxCellsPerSlice { get; set; }
 
         public string[,] Pizza { get; set; }
+        public IEnumerable<string> PizzaDetails { get; set; }
 
-        public slice FindSliceFrom(string[,] target, int[,] statPos, int i)
+        public slice FindSliceFrom(string[,] target, int[,] statPos, int i, int sliceSize)
         {
             slice result = new slice { botright = null, topleft = null };
             // Set the arryList
@@ -84,7 +85,8 @@ namespace HashCode2017Pizza
                         result.cellCount++;
                         result.cellHistory.Add(new pCell { x = row, y = col });
 
-                        if (target[row, col] == searchType && result.mushCount >= MinIngredientsPerSlice && result.tomCount >= MinIngredientsPerSlice && result.cellCount <= MaxCellsPerSlice)
+                        // This will loop over multiple times, starting with the biggest slices possible.
+                        if (target[row, col] == searchType && result.cellCount == sliceSize && result.mushCount >= MinIngredientsPerSlice && result.tomCount >= MinIngredientsPerSlice && result.cellCount <= MaxCellsPerSlice)
                         {
                             //if (row == StartRow || col == StartCol)
                             // if is square / rectangle ???
@@ -148,20 +150,31 @@ namespace HashCode2017Pizza
             // Need to think of a algorithm to cut the pizza.
             //start letter
             Random r = new Random();
-            
-            for (int i =1; i< (Rows * Collumns); i++)
+            // Clear any slices that may be left over from other runs.
+            PizzaSlices.Clear();
+            // Need to clear the pizza too.
+            CreatePizza(PizzaDetails);
+            // loop over enough times to get the slices needed.
+            for (int i =1; i< (Rows * Collumns * 2); i++)
             {
                 int rX = r.Next(0, Rows);
                 int rY = r.Next(0, Collumns);
 
                 int[,] startCor = new int[rX, rY];
 
-                slice newSlice = FindSliceFrom(Pizza, startCor, i);
-                if (newSlice.botright != null)
+                // start with the biggest slices possible.
+                for (int sliceSize = MaxCellsPerSlice; sliceSize > 0; sliceSize--)
                 {
-                    //valid slice, add to collection
-                    PizzaSlices.Add(newSlice);
+                    slice newSlice = FindSliceFrom(Pizza, startCor, i, sliceSize);
+
+                    // If this is valid add!
+                    if (newSlice.botright != null)
+                    {
+                        //valid slice, add to collection
+                        PizzaSlices.Add(newSlice);
+                    }
                 }
+               
             }
             // Flat pizza, doesn't help.
             //string[] flatPizza = Pizza.Cast<string>().ToArray();
@@ -181,7 +194,7 @@ namespace HashCode2017Pizza
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var FileDetails = File.ReadAllLines("medium.in");
+            var FileDetails = File.ReadAllLines("small.in");
 
             var PizzaConfig = FileDetails.First();
             Rows = Convert.ToInt32(PizzaConfig.Split(' ')[0]);
@@ -191,11 +204,26 @@ namespace HashCode2017Pizza
 
             Pizza = new string[Rows, Collumns];
             
-            var PizzaDetails = FileDetails.Skip(1);
+            PizzaDetails = FileDetails.Skip(1);
             //Draw the Pizza
             CreatePizza(PizzaDetails);
             PrintPizza(Pizza);
-            CutPizza();
+
+            double perc = 0;
+            double total = 0;
+            double max = 0;
+            while (perc < 85)
+            {
+                // Try cutting up the pizza.
+                CutPizza();
+
+                total = PizzaSlices.Sum(p => p.cellCount);
+                max = (Rows * Collumns);
+                perc = (total / max * 100);
+            }
+           
+            Console.Write("Score = " + total + "/" + max + " %" + (total / max * 100) + Environment.NewLine + Environment.NewLine);
+
             PrintPizza(Pizza);
 
             stopWatch.Stop();
@@ -203,7 +231,7 @@ namespace HashCode2017Pizza
             TimeSpan ts = stopWatch.Elapsed;
 
             // Format and display the TimeSpan value.
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+            string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
             Console.WriteLine("RunTime " + elapsedTime);
@@ -243,7 +271,6 @@ namespace HashCode2017Pizza
                 Console.Write(Environment.NewLine);
             }
             Console.Write("---------------------------" + Environment.NewLine);
-            Console.Write("Score = " + PizzaSlices.Sum(p => p.cellCount) + "/" + (Rows * Collumns) + Environment.NewLine + Environment.NewLine);
             //last debugging point to view console.
             var data = false;
         }
